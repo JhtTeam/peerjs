@@ -350,23 +350,30 @@ MediaConnection.prototype.handleMessage = function(message) {
 }
 
 MediaConnection.prototype.answer = function(stream) {
+  console.log("MediaConnection.. answer");
+  console.log(stream);
   if (this.localStream) {
     util.warn('Local stream already exists on this MediaConnection. Are you answering a call twice?');
     return;
   }
+  console.log("MediaConnection.. answer 1");
 
   this.options._payload._stream = stream;
-
+  console.log("MediaConnection.. answer 2");
   this.localStream = stream;
+  console.log("MediaConnection.. answer 3");
   Negotiator.startConnection(
     this,
     this.options._payload
   )
+  console.log("MediaConnection.. answer 4");
   // Retrieve lost messages stored because PeerConnection not set up.
   var messages = this.provider._getMessages(this.id);
+  console.log("MediaConnection.. answer 5");
   for (var i = 0, ii = messages.length; i < ii; i += 1) {
     this.handleMessage(messages[i]);
   }
+  console.log("MediaConnection.. answer 6");
   this.open = true;
 };
 
@@ -493,6 +500,7 @@ Negotiator._addProvider = function(provider) {
 /** Start a PC. */
 Negotiator._startPeerConnection = function(connection) {
   util.log("Creating RTCPeerConnection.");
+  util.log(connection);
 
   var id = Negotiator._idPrefix + util.randomToken();
   var optional = {};
@@ -505,6 +513,9 @@ Negotiator._startPeerConnection = function(connection) {
   }
 
   var pc = new RTCPeerConnection(connection.provider.options.config, optional);
+  if (window.cordova && window.device.platform === 'iOS') {
+    pc = new cordova.plugins.iosrtc.RTCPeerConnection(connection.provider.options.config, optional);
+  }
   Negotiator.pcs[connection.type][connection.peer][id] = pc;
 
   Negotiator._setupListeners(connection, pc, id);
@@ -704,6 +715,9 @@ Negotiator._makeAnswer = function(connection) {
 /** Handle an SDP. */
 Negotiator.handleSDP = function(type, connection, sdp) {
   sdp = new RTCSessionDescription(sdp);
+  if (window.cordova && window.device.platform === 'iOS') {
+    sdp = new cordova.plugins.iosrtc.RTCSessionDescription(sdp);
+  }
   var pc = connection.pc;
 
   util.log("Setting remote description", sdp);
