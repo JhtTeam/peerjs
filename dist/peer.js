@@ -500,7 +500,10 @@ Negotiator._addProvider = function(provider) {
 /** Start a PC. */
 Negotiator._startPeerConnection = function(connection) {
   util.log("Creating RTCPeerConnection.");
-  util.log(connection);
+  console.log(connection.type);
+  console.log(connection.provider);
+  console.log(connection.provider.options);
+  console.log(connection.provider.options.config);
 
   var id = Negotiator._idPrefix + util.randomToken();
   var optional = {};
@@ -511,10 +514,11 @@ Negotiator._startPeerConnection = function(connection) {
     // Interop req for chrome.
     optional = { optional: [{ DtlsSrtpKeyAgreement: true }] };
   }
-
-  var pc = new RTCPeerConnection(connection.provider.options.config, optional);
+  var pc = null;
   if (window.cordova && window.device.platform === 'iOS') {
     pc = new cordova.plugins.iosrtc.RTCPeerConnection(connection.provider.options.config, optional);
+  } else {
+    pc = new RTCPeerConnection(connection.provider.options.config, optional);
   }
   Negotiator.pcs[connection.type][connection.peer][id] = pc;
 
@@ -714,9 +718,10 @@ Negotiator._makeAnswer = function(connection) {
 
 /** Handle an SDP. */
 Negotiator.handleSDP = function(type, connection, sdp) {
-  sdp = new RTCSessionDescription(sdp);
   if (window.cordova && window.device.platform === 'iOS') {
     sdp = new cordova.plugins.iosrtc.RTCSessionDescription(sdp);
+  } else {
+    sdp = new RTCSessionDescription(sdp);
   }
   var pc = connection.pc;
 
@@ -741,12 +746,19 @@ Negotiator.handleSDP = function(type, connection, sdp) {
 Negotiator.handleCandidate = function(connection, ice) {
   var candidate = ice.candidate;
   var sdpMLineIndex = ice.sdpMLineIndex;
-  connection.pc.addIceCandidate(
-    new RTCIceCandidate({
-      sdpMLineIndex: sdpMLineIndex,
-      candidate: candidate
-    })
-  );
+  var iceCandidate = null;
+  if (window.cordova && window.device.platform === 'iOS') {
+    iceCandidate = new cordova.plugins.iosrtc.RTCIceCandidate({ sdpMLineIndex: sdpMLineIndex, candidate: candidate});
+  } else {
+    iceCandidate = new RTCIceCandidate({ sdpMLineIndex: sdpMLineIndex, candidate: candidate});
+  }
+  connection.pc.addIceCandidate(iceCandidate)
+  // connection.pc.addIceCandidate(
+  //   new RTCIceCandidate({
+  //     sdpMLineIndex: sdpMLineIndex,
+  //     candidate: candidate
+  //   })
+  // );
   util.log("Added ICE candidate for:", connection.peer);
 };
 
