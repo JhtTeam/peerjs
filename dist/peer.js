@@ -827,7 +827,8 @@ function Peer(id, options) {
 
   // Sanity checks
   // Ensure WebRTC supported
-  if (!util.supports.audioVideo && !util.supports.data) {
+  const cordova = window.cordova && window.device.platform === 'iOS';
+  if (!cordova && !util.supports.audioVideo && !util.supports.data) {
     this._delayedAbort(
       "browser-incompatible",
       "The current browser does not support WebRTC"
